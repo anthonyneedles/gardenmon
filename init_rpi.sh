@@ -26,6 +26,9 @@ sudo raspi-config nonint do_serial 0
 sudo apt install python3 -y
 sudo apt install python3-smbus -y
 
+# Install mysql-connector-python
+pip install mysql-connector-python
+
 # Enable I2C.
 sudo raspi-config nonint do_i2c 0
 
