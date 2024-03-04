@@ -5,9 +5,18 @@ import csv
 import datetime
 import glob
 import logging
+import mysql.connector
 import os
 import smbus
+import sys
 import time
+
+INSERT_STATEMENT = (
+    "INSERT INTO environmental_data "
+    "(cpu_temp_f, ambient_light_lx, soil_moisture_val, soil_moisture_level, "
+    "soil_temp_f, ambient_temp_f, ambient_humidity, insert_time) "
+    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+)
 
 def c_to_f(c: float) -> float:
     """
@@ -238,6 +247,26 @@ def gardenmon_main():
         with open(f"{log_folder}/{current_time.date()}.csv", "a") as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=',')
             csvwriter.writerow(row)
+
+        data = (cpu_temp_val, als_val, sms_val, 5,
+                sts_temperature, aths_vals['temperature'], aths_vals['humidity'], current_time)
+        try:
+            connection = mysql.connector.connect(
+                            host=host,
+                            database=database,
+                            user='gardenmon',
+                            password=sys.argv[1],
+            )
+    
+            cursor = connection.cursor()
+            cursor.execute(insert_stmt, data)
+            connection.commit()        
+        except mysql.connector.Error as e:
+            logging.info(f"An error occurred: {e}")
+        finally:
+            if connection and connection.is_connected():
+                cursor.close()
+                connection.close()
 
         time.sleep(1)
 
