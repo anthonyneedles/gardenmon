@@ -28,3 +28,10 @@ CREATE TABLE environmental_data (
     ambient_humidity FLOAT,
     insert_time TIMESTAMP
 );
+
+After that, run this to create the user and add necessary permissions.
+CREATE USER 'gardenmon'@'192.168.10.67' IDENTIFIED BY 'top_secret_password';
+GRANT USAGE ON *.* to 'gardenmon'@'192.168.10.67' IDENTIFIED BY 'top_secret_password'
+GRANT ALL PRIVILEGES ON *.* to 'gardenmon'@'192.168.10.67' IDENTIFIED BY 'top_secret_password';
+
+And when running the python script, you need to add the password as a flag like python gardenmon.py top_secret_password
