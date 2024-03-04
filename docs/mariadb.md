@@ -9,8 +9,7 @@ To access the MariaDB instance, use the following command:
 
 sudo mysql -u root -p
 
-Creating the Database Table
-After configuring MariaDB on your Plex server, proceed to create a database and table as per the provided structure.
+Creating the Database, Table, and User
 
 First, run this to create a database
 CREATE DATABASE IF NOT EXISTS gardenmon;
