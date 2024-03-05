@@ -226,20 +226,26 @@ def gardenmon_main():
         row = [timestamp]
 
         cpu_temp_val = cpu_temp_sensor.get_value()
-        row.extend(["CPU Temperature", f"{cpu_temp_val:0.1f}", "F"])
+        cpu_temp_str = f"{cpu_temp_val:0.1f}"
+        row.extend(["CPU Temperature", cpu_temp_str, "F"])
 
         aths_vals = aths_sensor.get_value()
-        row.extend(["Ambient Temperature", f"{aths_vals['temperature']:0.1f}", "F"])
-        row.extend(["Ambient Humidity",    f"{aths_vals['humidity']:0.1f}",    "%"])
+        aths_temp_str = f"{aths_vals['temperature']:0.1f}"
+        aths_hmd_str = f"{aths_vals['humidity']:0.1f}"
+        row.extend(["Ambient Temperature", aths_temp_str, "F"])
+        row.extend(["Ambient Humidity",    aths_hmd_str, "%"])
 
-        sts_temperature = sts_sensor.get_value()
-        row.extend(["Soil Temperature", f"{sts_temperature:0.1f}", "F"])
+        sts_temp_val = sts_sensor.get_value()
+        sts_temp_str = f"{sts_temp_val:0.1f}"
+        row.extend(["Soil Temperature", sts_temp_str, "F"])
 
         sms_val = sms_sensor.get_value()
-        row.extend(["Soil Moisture Value", f"{sms_val}", "decimal_value"])
+        sms_str = f"{sms_val}"
+        row.extend(["Soil Moisture Value", sms_str, "decimal_value"])
 
-        als_val = als_sensor.get_value()
-        row.extend(["Ambient Light", f"{als_val:0.1f}", "lx"])
+        als_lux_val = als_sensor.get_value()
+        als_lux_str = f"{als_lux_val:0.1f}"
+        row.extend(["Ambient Light", als_lux_str, "lx"])
 
         with open(f"{log_folder}/main.csv", "a") as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=',')
@@ -250,8 +256,17 @@ def gardenmon_main():
             csvwriter.writerow(row)
 
         # TODO: sms levels
-        data = (cpu_temp_val, als_val, sms_val, 5,
-                sts_temperature, aths_vals["temperature"], aths_vals["humidity"], current_time)
+        data = (
+            cpu_temp_str,
+            als_lux_str,
+            sms_str,
+            5,
+            sts_temp_str,
+            aths_temp_str,
+            aths_hmd_str,
+            current_time
+        )
+
         try:
             connection = mysql.connector.connect(
                 host=local_options.database_host,
