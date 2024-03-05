@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import csv
 import datetime
 import glob
+import local_options
 import logging
 import mysql.connector
 import os
@@ -248,21 +249,22 @@ def gardenmon_main():
             csvwriter = csv.writer(csvfile, delimiter=',')
             csvwriter.writerow(row)
 
+        # TODO: sms levels
         data = (cpu_temp_val, als_val, sms_val, 5,
-                sts_temperature, aths_vals['temperature'], aths_vals['humidity'], current_time)
+                sts_temperature, aths_vals["temperature"], aths_vals["humidity"], current_time)
         try:
             connection = mysql.connector.connect(
-                            host=host,
-                            database=database,
-                            user='gardenmon',
-                            password=sys.argv[1],
+                host=local_options.database_host,
+                database=local_options.database_name,
+                user=local_options.database_user,
+                password=local_options.database_password
             )
-    
+
             cursor = connection.cursor()
-            cursor.execute(insert_stmt, data)
-            connection.commit()        
-        except mysql.connector.Error as e:
-            logging.info(f"An error occurred: {e}")
+            cursor.execute(INSERT_STATEMENT, data)
+            connection.commit()
+        except mysql.connector.Error:
+            logging.exception(f"Could not insert data to database.")
         finally:
             if connection and connection.is_connected():
                 cursor.close()

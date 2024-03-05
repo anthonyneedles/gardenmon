@@ -37,4 +37,13 @@ sudo raspi-config nonint do_onewire 0
 sudo sh -c "sed -e 's?\${GARDENMON_PATH}?`pwd`?' gardenmon.service.template > /etc/systemd/system/gardenmon.service"
 sudo systemctl enable gardenmon
 
-echo "You should reboot now..."
+# Make the CSV log folder and make it only writable to user.
+sudo mkdir -p /var/log/gardenmon && sudo chmod 644 /var/log/gardenmon
+
+# Create local options module from template. User will need to fill this out.
+if [ ! -f local_options.py ]; then
+    cp local_options.py.template local_options.py
+    echo "local_options.py copied from template, be sure to fill out variables!"
+fi
+
+echo "Reboot needed."
