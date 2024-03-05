@@ -7,7 +7,7 @@ import glob
 import logging
 import mysql.connector
 import os
-import smbus
+from smbus2 import SMBus
 import sys
 import time
 
@@ -64,7 +64,7 @@ class aths(sensor):
     """
 
     def __init__(self):
-        self.i2cbus = smbus.SMBus(1)
+        self.i2cbus = SMBus(1)
 
         # addr bit is pulled to ground.
         self.i2caddr = 0x44
@@ -148,7 +148,7 @@ class sms(sensor):
     """
 
     def __init__(self):
-        self.i2cbus = smbus.SMBus(1)
+        self.i2cbus = SMBus(1)
 
         # Address of the A5 variant of the MCP3221.
         self.i2caddr = 0x4d
@@ -180,7 +180,7 @@ class als(sensor):
     """
 
     def __init__(self):
-        self.i2cbus = smbus.SMBus(1)
+        self.i2cbus = SMBus(1)
         self.i2caddr = 0x23
 
         self.lux_trim = 0.0

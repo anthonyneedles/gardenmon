@@ -22,12 +22,10 @@ git config --global credential.helper store
 # Enable serial port and enable interactive login.
 sudo raspi-config nonint do_serial 0
 
-# Install python3 and smbus library for I2C.
+# Install python3 and needed libraries.
 sudo apt install python3 -y
-sudo apt install python3-smbus -y
-
-# Install mysql-connector-python
-pip install mysql-connector-python
+sudo pip3 install smbus2
+sudo pip3 install mysql-connector-python
 
 # Enable I2C.
 sudo raspi-config nonint do_i2c 0
