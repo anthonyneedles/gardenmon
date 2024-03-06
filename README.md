@@ -1,6 +1,7 @@
 # GardenMon
 
 - [GardenMon](#gardenmon)
+  - [Block Diagram](#block-diagram)
   - [Hardware](#hardware)
     - [Raspberry Pi](#raspberry-pi)
     - [Sensors](#sensors)
@@ -9,9 +10,13 @@
   - [Software](#software)
     - [Raspberry Pi Setup](#raspberry-pi-setup)
       - [Further Setup](#further-setup)
+    - [Database](#database)
     - [Useful Commands](#useful-commands)
 
 ## Block Diagram
+
+The GardenMon is mean to interface with a database host device to store environmental data.
+Any number of GardeMon devices can be setup to interface with this centralized database.
 
 ![gardenmon_block_diagram.jpg](./docs/gardenmon_block_diagram.jpg)
 
