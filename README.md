@@ -86,6 +86,12 @@ sudo systemctl restart smbd
 
 Should be found on Windows at `\\gardenmon\gardenmon_logs`.
 
+### Database
+
+In addition to being written to CSVs, data is published to a database.
+
+See [docs/mariadb.md](docs/mariadb.md) for info on setting up the database with MariaDB.
+
 ### Useful Commands
 
 To start/stop/restart the gardenmon service:

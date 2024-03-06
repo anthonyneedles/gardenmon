@@ -12,13 +12,6 @@ from smbus2 import SMBus
 import sys
 import time
 
-INSERT_STATEMENT = (
-    "INSERT INTO environmental_data "
-    "(cpu_temp_f, ambient_light_lx, soil_moisture_val, soil_moisture_level, "
-    "soil_temp_f, ambient_temp_f, ambient_humidity, insert_time) "
-    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-)
-
 def c_to_f(c: float) -> float:
     """
     Celcius to Farenheit.
@@ -273,6 +266,13 @@ def gardenmon_main():
                 database=local_options.database_name,
                 user=local_options.database_user,
                 password=local_options.database_password
+            )
+
+            INSERT_STATEMENT = (
+                f"INSERT INTO {local_options.database_table} "
+                "(cpu_temp_f, ambient_light_lx, soil_moisture_val, soil_moisture_level, "
+                "soil_temp_f, ambient_temp_f, ambient_humidity, insert_time) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
             )
 
             cursor = connection.cursor()

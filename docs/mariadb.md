@@ -1,23 +1,42 @@
-Ripped from this website https://devopscube.com/install-mariadb-on-ubuntu/
+# MariaDB
 
-Configuring MariaDB on a Plex Server
-This guide walks through the installation and configuration of MariaDB on a Plex server, tailored specifically for an Ubuntu system. We will follow the steps outlined on the website devopscube.com and then proceed to create a database table with the structure provided.
+## Setup
 
+### Installing MariaDB on Database Server
+
+This guide walks through the installation and configuration of MariaDB on a database server.
+This server should probably be a centralized machine rather than a GardenMon device, due to memory/processor limitations (e.g. a Raspberry Pi 4).
+
+First, install MariaDB.
+
+```
 sudo apt-get install mariadb-server
+```
 
 To access the MariaDB instance, use the following command:
 
+```
 sudo mysql -u root -p
+```
 
-Creating the Database, Table, and User
+You will need to setup a root password the first time.
 
-First, run this to create a database
-CREATE DATABASE IF NOT EXISTS gardenmon;
+### Creating the Database, Table, User, and Permissions
 
-Next, create the table.
-Here's a DDL statement for the specified table:
+The following commands will be ran in the MariaDB CLI.
 
-CREATE TABLE environmental_data (
+First, create the database.
+`<DATABASE_NAME>` should probably just be `gardenmon`.
+
+```
+CREATE DATABASE IF NOT EXISTS <DATABASE_NAME>;
+```
+
+Create the table with the following DDL statement.
+`<DATABASE_TABLE>` should probably just be `environmental_data`.
+
+```
+CREATE TABLE <DATABASE_TABLE> (
     cpu_temp_f FLOAT,
     ambient_light_lx FLOAT,
     soil_moisture_val INT,
@@ -27,10 +46,35 @@ CREATE TABLE environmental_data (
     ambient_humidity FLOAT,
     insert_time TIMESTAMP
 );
+```
 
-After that, run this to create the user and add necessary permissions.
-CREATE USER 'gardenmon'@'192.168.10.67' IDENTIFIED BY 'top_secret_password';
-GRANT USAGE ON *.* to 'gardenmon'@'192.168.10.67' IDENTIFIED BY 'top_secret_password'
-GRANT ALL PRIVILEGES ON *.* to 'gardenmon'@'192.168.10.67' IDENTIFIED BY 'top_secret_password';
+Create the user for the database add necessary permissions.
 
-And when running the python script, you need to add the password as a flag like python gardenmon.py top_secret_password
+- `<DATABASE_USER>` should probably be the hostname of the GardenMon (i.e. `gardenmon` or `gardenmon2`).
+- `<GARDENMON_IP>` must the IP of the GardenMon.
+- `<DATABASE_PASSWORD>` can be any password for the database user.
+- `<DATABASE_NAME>` is as defined above.
+- `<DATABASE_TABLE>` is as defined above.
+
+**NOTE: THIS WILL NEED TO BE DONE FOR EACH GARDENMON IN NETWORK.**
+
+```
+CREATE USER '<DATABASE_USER>'@'<GARDENMON_IP>' IDENTIFIED BY '<DATABASE_PASSWORD>';
+GRANT USAGE ON <DATABASE_NAME>.<DATABASE_TABLE> to '<DATABASE_USER>'@'<GARDENMON_IP>' IDENTIFIED BY '<DATABASE_PASSWORD>'
+GRANT ALL PRIVILEGES ON <DATABASE_NAME>.<DATABASE_TABLE> to '<DATABASE_USER'@'<GARDENMON_IP>' IDENTIFIED BY '<DATABASE_PASSWORD>';
+FLUSH PRIVILEGES;
+```
+
+### Update GardenMon
+
+Update `local_options.py` in the GardenMon.
+This should have been made from [local_options.py.template](../local_options.py.template) when running [init_rpi.sh](../init_rpi.sh).
+`<DATABASE_HOST>` is the hostname or IP of the database host.
+
+```
+database_host=<DATABASE_HOST>
+database_name=<DATABASE_NAME>
+database_table=<DATABASE_TABLE>
+database_user=<DATABASE_USER>
+database_password=<DATABASE_PASSWORD>
+```
