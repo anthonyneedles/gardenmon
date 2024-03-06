@@ -285,7 +285,7 @@ def gardenmon_main():
                 cursor.close()
                 connection.close()
 
-        time.sleep(1)
+        time.sleep(60)
 
 if __name__ == "__main__":
     gardenmon_main()
