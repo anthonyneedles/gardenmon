@@ -18,7 +18,7 @@ def c_to_f(c: float) -> float:
     """
     return (c * 1.8) + 32
 
-class sensor(ABC):
+class Sensor(ABC):
     """
     Base class for all sensors.
     """
@@ -30,7 +30,7 @@ class sensor(ABC):
         """
         pass
 
-class cpu_temp(sensor):
+class CpuTemp(Sensor):
     """
     Sensor class for the temperature sensor for the RPi CPU.
     """
@@ -51,7 +51,7 @@ class cpu_temp(sensor):
             return 99999.9
 
 
-class aths(sensor):
+class ATHS(Sensor):
     """
     Ambient Temperature/Humidity Sensor. Underlying sensor is the SHT30
     temperature and humidity sensor. Connected via I2C.
@@ -98,7 +98,7 @@ class aths(sensor):
             logging.exception(f"Failure to read Ambient Temperature/Humidity Sensor")
             return { "temperature": 9999.9, "humidity": 9999.9 }
 
-class sts(sensor):
+class STS(Sensor):
     """
     Soil Temperature Sensor. Underlying sensor is the DS18B20 temperature
     sensor. Connected via 1 wire.
@@ -135,7 +135,7 @@ class sts(sensor):
             logging.exception(f"Failure to read Soil Temperature Sensor")
             return 99999.9
 
-class sms(sensor):
+class SMS(Sensor):
     """
     Soil Moisture Sensor. Underlying sensor is a soil moisture probe with
     the output fed into an MCP3221 ADC. Connected via I2C.
@@ -167,7 +167,7 @@ class sms(sensor):
             logging.exception(f"Failure to read Soil Moisture Sensor")
             return 99999
 
-class als(sensor):
+class ALS(Sensor):
     """
     Ambient Light Sensor. Underlying sensor is probably a BH1750. Connected
     via I2C.
@@ -202,17 +202,20 @@ def gardenmon_main():
     if not os.path.exists(log_folder):
         os.makedirs(log_folder)
 
-    cpu_temp_sensor = cpu_temp()
-    aths_sensor = aths()
-    sts_sensor = sts()
-    sms_sensor = sms()
-    als_sensor = als()
+    cpu_temp_sensor = CpuTemp()
+    aths_sensor = ATHS()
+    sts_sensor = STS()
+    sms_sensor = SMS()
+    als_sensor = ALS()
 
     time.sleep(1)
 
     logging.info("gardenmon starting...")
 
     while True:
+        # Ensure we sample every minute, on the minute.
+        sleeptime = 60 - datetime.datetime.now().second
+        time.sleep(sleeptime)
         current_time = datetime.datetime.now()
 
         timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
@@ -284,8 +287,6 @@ def gardenmon_main():
             if connection and connection.is_connected():
                 cursor.close()
                 connection.close()
-
-        time.sleep(60)
 
 if __name__ == "__main__":
     gardenmon_main()
