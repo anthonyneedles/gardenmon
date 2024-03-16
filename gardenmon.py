@@ -30,6 +30,17 @@ class Sensor(ABC):
         """
         pass
 
+    def get_value_or_none(self):
+        """
+        Attempt to read and return the value from a sensor, or return None if the
+        read fails.
+        """
+        try:
+            return self.read()
+        except:
+            logging.exception(f"Failure to read '{type(self).__name__}' sensor")
+            return None
+
 class CpuTemp(Sensor):
     """
     Sensor class for the temperature sensor for the RPi CPU.
@@ -42,14 +53,6 @@ class CpuTemp(Sensor):
         with open(self.cpu_temp_file) as cpu_temp_file:
             val = c_to_f(int(cpu_temp_file.read()) / 1000.0)
         return val
-
-    def get_value(self) -> float:
-        try:
-            return self.read()
-        except:
-            logging.exception(f"Failure to read CPU temp sensor")
-            return 99999.9
-
 
 class ATHS(Sensor):
     """
@@ -91,13 +94,6 @@ class ATHS(Sensor):
         vals["humidity"] = humidity_percent
         return vals
 
-    def get_value(self) -> dict:
-        try:
-            return self.read()
-        except:
-            logging.exception(f"Failure to read Ambient Temperature/Humidity Sensor")
-            return { "temperature": 9999.9, "humidity": 9999.9 }
-
 class STS(Sensor):
     """
     Soil Temperature Sensor. Underlying sensor is the DS18B20 temperature
@@ -125,16 +121,6 @@ class STS(Sensor):
         temperature_f = c_to_f(float(temperature_string) / 1000.0)
         return temperature_f + self.temperature_trim
 
-    def get_value(self) -> float:
-        try:
-            # If the sensor is disconnected from the 1wire connection to the
-            # board this will read 0, without any way to really detect the
-            # error condition.
-            return self.read()
-        except:
-            logging.exception(f"Failure to read Soil Temperature Sensor")
-            return 99999.9
-
 class SMS(Sensor):
     """
     Soil Moisture Sensor. Underlying sensor is a soil moisture probe with
@@ -160,13 +146,6 @@ class SMS(Sensor):
 
         return val
 
-    def get_value(self) -> int:
-        try:
-            return self.read()
-        except:
-            logging.exception(f"Failure to read Soil Moisture Sensor")
-            return 99999
-
 class ALS(Sensor):
     """
     Ambient Light Sensor. Underlying sensor is probably a BH1750. Connected
@@ -187,13 +166,6 @@ class ALS(Sensor):
         val = data[0] << 8 | data[1]
         lux = float(val)/1.2 + self.lux_trim
         return lux
-
-    def get_value(self) -> float:
-        try:
-            return self.read()
-        except:
-            logging.exception(f"Failure to read Ambient Light Sensor")
-            return 99999.9
 
 def gardenmon_main():
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
@@ -218,30 +190,21 @@ def gardenmon_main():
         time.sleep(sleeptime)
         current_time = datetime.datetime.now()
 
-        timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
-        row = [timestamp]
+        cpu_temp  = cpu_temp_sensor.get_value_or_none()
+        aths_vals = aths_sensor.get_value_or_none()
+        aths_temp = aths_vals["temperature"]
+        aths_hmd  = aths_vals["humidity"]
+        sts_temp  = sts_sensor.get_value_or_none()
+        sms_val   = sms_sensor.get_value_or_none()
+        als_lux   = als_sensor.get_value_or_none()
 
-        cpu_temp_val = cpu_temp_sensor.get_value()
-        cpu_temp_str = f"{cpu_temp_val:0.1f}"
-        row.extend(["CPU Temperature", cpu_temp_str, "F"])
-
-        aths_vals = aths_sensor.get_value()
-        aths_temp_str = f"{aths_vals['temperature']:0.1f}"
-        aths_hmd_str = f"{aths_vals['humidity']:0.1f}"
-        row.extend(["Ambient Temperature", aths_temp_str, "F"])
-        row.extend(["Ambient Humidity",    aths_hmd_str, "%"])
-
-        sts_temp_val = sts_sensor.get_value()
-        sts_temp_str = f"{sts_temp_val:0.1f}"
-        row.extend(["Soil Temperature", sts_temp_str, "F"])
-
-        sms_val = sms_sensor.get_value()
-        sms_str = f"{sms_val}"
-        row.extend(["Soil Moisture Value", sms_str, "decimal_value"])
-
-        als_lux_val = als_sensor.get_value()
-        als_lux_str = f"{als_lux_val:0.1f}"
-        row.extend(["Ambient Light", als_lux_str, "lx"])
+        row = [current_time.strftime('%Y-%m-%d %H:%M:%S')]
+        row.extend(["CPU Temperature",     cpu_temp,  "F"])
+        row.extend(["Ambient Temperature", aths_temp, "F"])
+        row.extend(["Ambient Humidity",    aths_hmd,  "%"])
+        row.extend(["Soil Temperature",    sts_temp,  "F"])
+        row.extend(["Soil Moisture Value", sms_val,   "decimal_value"])
+        row.extend(["Ambient Light",       als_lux,   "lx"])
 
         with open(f"{log_folder}/main.csv", "a") as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=',')
@@ -253,13 +216,13 @@ def gardenmon_main():
 
         # TODO: sms levels
         data = (
-            cpu_temp_str,
-            als_lux_str,
-            sms_str,
+            cpu_temp,
+            als_lux,
+            sms_val,
             5,
-            sts_temp_str,
-            aths_temp_str,
-            aths_hmd_str,
+            sts_temp,
+            aths_temp,
+            aths_hmd,
             current_time
         )
 
