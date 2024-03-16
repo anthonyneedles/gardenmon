@@ -52,7 +52,7 @@ class CpuTemp(Sensor):
     def read(self) -> float:
         with open(self.cpu_temp_file) as cpu_temp_file:
             val = c_to_f(int(cpu_temp_file.read()) / 1000.0)
-        return val
+        return round(val, 2)
 
 class ATHS(Sensor):
     """
@@ -90,8 +90,8 @@ class ATHS(Sensor):
         humidity_percent = ((humidity_raw    * 100.0) / 0xFFFF) + self.humidity_trim
 
         vals = dict();
-        vals["temperature"] = temperature_f
-        vals["humidity"] = humidity_percent
+        vals["temperature"] = round(temperature_f, 2)
+        vals["humidity"] = round(humidity_percent, 1)
         return vals
 
 class STS(Sensor):
@@ -105,7 +105,6 @@ class STS(Sensor):
         base_dir = '/sys/bus/w1/devices/'
         device_folder = glob.glob(base_dir + '28*')[0]
         self.device_file = device_folder + '/w1_slave'
-
         self.temperature_trim = -2.2
 
     def read(self) -> float:
@@ -119,7 +118,8 @@ class STS(Sensor):
         # reading in Celsius * 1000.
         temperature_string = lines[1][lines[1].find("t=") + 2:]
         temperature_f = c_to_f(float(temperature_string) / 1000.0)
-        return temperature_f + self.temperature_trim
+        temperature_f = temperature_f + self.temperature_trim
+        return round(temperature_f, 2)
 
 class SMS(Sensor):
     """
@@ -165,7 +165,7 @@ class ALS(Sensor):
         data = self.i2cbus.read_i2c_block_data(self.i2caddr, 0x10, 2)
         val = data[0] << 8 | data[1]
         lux = float(val)/1.2 + self.lux_trim
-        return lux
+        return round(lux, 1)
 
 def gardenmon_main():
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
