@@ -70,7 +70,7 @@ class ATHS(Sensor):
         # second. Kinda overkill, but we aren't on battery power.
         self.i2cbus.write_byte_data(self.i2caddr, 0x27, 0x37)
 
-        self.temperature_trim = 0.0
+        self.temperature_trim = 1.0
         self.humidity_trim = 0.0
 
     def read(self) -> dict:
@@ -105,7 +105,7 @@ class STS(Sensor):
         base_dir = '/sys/bus/w1/devices/'
         device_folder = glob.glob(base_dir + '28*')[0]
         self.device_file = device_folder + '/w1_slave'
-        self.temperature_trim = -2.2
+        self.temperature_trim = 0
 
     def read(self) -> float:
         with open(self.device_file, 'r') as device_file:
