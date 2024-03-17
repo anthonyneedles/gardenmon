@@ -135,6 +135,11 @@ class SMS(Sensor):
 
         self.value_trim = 0
 
+        # Measured low (dry) and high (wet) points.
+        self.low_value = 200
+        self.high_value = 1100
+        self.levels = 10
+
     def read(self) -> int:
         # Read fake "register" 0x00, get back 2 bytes:
         #   0 : MSB of ADC reading
@@ -145,6 +150,16 @@ class SMS(Sensor):
         val += self.value_trim
 
         return val
+
+    def value_to_level(self, value: int) -> int:
+        if value < self.low_value:
+            return 1
+        elif value > self.high_value:
+            return self.levels
+        else:
+            # Rely on int() rounding to floor() the calculated level.
+            value_per_step = (self.high_value - self.low_value)/(self.levels - 2)
+            return int((value - self.low_value)/value_per_step) + 2
 
 class ALS(Sensor):
     """
@@ -196,6 +211,7 @@ def gardenmon_main():
         aths_hmd  = aths_vals["humidity"]
         sts_temp  = sts_sensor.get_value_or_none()
         sms_val   = sms_sensor.get_value_or_none()
+        sms_level = sms_sensor.value_to_level(sms_val)
         als_lux   = als_sensor.get_value_or_none()
 
         row = [current_time.strftime('%Y-%m-%d %H:%M:%S')]
@@ -204,6 +220,7 @@ def gardenmon_main():
         row.extend(["Ambient Humidity",    aths_hmd,  "%"])
         row.extend(["Soil Temperature",    sts_temp,  "F"])
         row.extend(["Soil Moisture Value", sms_val,   "decimal_value"])
+        row.extend(["Soil Moisture Level", sms_level, "decimal_value"])
         row.extend(["Ambient Light",       als_lux,   "lx"])
 
         with open(f"{log_folder}/main.csv", "a") as csvfile:
@@ -219,7 +236,7 @@ def gardenmon_main():
             cpu_temp,
             als_lux,
             sms_val,
-            5,
+            sms_level,
             sts_temp,
             aths_temp,
             aths_hmd,
