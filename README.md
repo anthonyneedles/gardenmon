@@ -26,7 +26,10 @@ Any number of GardeMon devices can be setup to interface with this centralized d
 - Raspberry Pi Zero 2 W: [Amazon](https://a.co/d/aA3E14W)
 - Raspberry Pi Zero 2 W 2x20 Header: [Amazon](https://a.co/d/92REUrK)
 - microSD Card, something like 128GB: [Amazon](https://a.co/d/crgGpk7)
-- USB to TTL Serial Adapter (for debug): [Amazon](https://a.co/d/1D9rg9l)
+- Power Adapter 5V 2.5A microUSB: [Amazon](https://a.co/d/dAorZ26)
+- Waterproof Enclosure: [Adafruit](https://www.adafruit.com/product/3931)
+- 2x Extra Cable Glands for case: [Adafruit](https://www.adafruit.com/product/762)
+- USB to TTL Serial Adapter (optional, for debug): [Amazon](https://a.co/d/1D9rg9l)
 
 ### Sensors
 - SHT30 Temperature/Humidity Sensor (I2C Interface): [Amazon](https://a.co/d/8ex6dXB)
