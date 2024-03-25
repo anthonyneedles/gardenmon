@@ -1,5 +1,15 @@
-database_host=""
-database_name=""
-database_table=""
-database_user=""
-database_password=""
+# Database credentials.
+database_host = ""
+database_name = ""
+database_table = ""
+database_user = ""
+database_password = ""
+
+# Trim values for sensors, obtained via empirical testing.
+aths_temperature_trim = 0.0
+aths_humidity_trim = 0.0
+sts_temperature_trim = 0.0
+sms_value_trim = 0
+sms_low_value = 200
+sms_high_value = 1100
+als_lux_trim = 0.0

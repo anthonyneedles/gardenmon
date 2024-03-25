@@ -70,8 +70,8 @@ class ATHS(Sensor):
         # second. Kinda overkill, but we aren't on battery power.
         self.i2cbus.write_byte_data(self.i2caddr, 0x27, 0x37)
 
-        self.temperature_trim = 1.0
-        self.humidity_trim = 0.0
+        self.temperature_trim = local_options.aths_temperature_trim
+        self.humidity_trim = local_options.aths_temperature_trim
 
     def read(self) -> dict:
         # Sensor readings are 6 bytes:
@@ -105,7 +105,7 @@ class STS(Sensor):
         base_dir = '/sys/bus/w1/devices/'
         device_folder = glob.glob(base_dir + '28*')[0]
         self.device_file = device_folder + '/w1_slave'
-        self.temperature_trim = 0
+        self.temperature_trim = local_options.sts_temperature_trim
 
     def read(self) -> float:
         with open(self.device_file, 'r') as device_file:
@@ -133,11 +133,11 @@ class SMS(Sensor):
         # Address of the A5 variant of the MCP3221.
         self.i2caddr = 0x4d
 
-        self.value_trim = 0
+        self.value_trim = local_options.sms_value_trim
 
         # Measured low (dry) and high (wet) points.
-        self.low_value = 200
-        self.high_value = 1100
+        self.low_value = local_options.sms_low_value
+        self.high_value = local_options.sms_high_value
         self.levels = 10
 
     def read(self) -> int:
@@ -171,7 +171,7 @@ class ALS(Sensor):
         self.i2cbus = SMBus(1)
         self.i2caddr = 0x23
 
-        self.lux_trim = 0.0
+        self.lux_trim = local_options.als_lux_trim
 
     def read(self) -> float:
         # From register 0x10, sensor readings are 2 bytes:
@@ -231,7 +231,6 @@ def gardenmon_main():
             csvwriter = csv.writer(csvfile, delimiter=',')
             csvwriter.writerow(row)
 
-        # TODO: sms levels
         data = (
             cpu_temp,
             als_lux,
