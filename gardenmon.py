@@ -9,6 +9,7 @@ import logging
 import mysql.connector
 import os
 from smbus2 import SMBus
+from socket import gethostname
 import sys
 import time
 
@@ -239,7 +240,8 @@ def gardenmon_main():
             sts_temp,
             aths_temp,
             aths_hmd,
-            current_time
+            current_time,
+            gethostname()
         )
 
         try:
@@ -253,8 +255,8 @@ def gardenmon_main():
             INSERT_STATEMENT = (
                 f"INSERT INTO {local_options.database_table} "
                 "(cpu_temp_f, ambient_light_lx, soil_moisture_val, soil_moisture_level, "
-                "soil_temp_f, ambient_temp_f, ambient_humidity, insert_time) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+                "soil_temp_f, ambient_temp_f, ambient_humidity, insert_time, device) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
             )
 
             cursor = connection.cursor()

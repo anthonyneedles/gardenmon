@@ -57,6 +57,7 @@ The GardenMon uses the [GardenMon Interface Board](https://github.com/anthonynee
    3.  Configure wireless LAN information.
    4.  Set locale.
    5.  Enable SSH, with public-key authentication with your public key added.
+
 2. When booted with imaged microSD ssh in using the credentials provided above. Install git, clone this repo, and run the init script:
 ```
 sudo apt install git -y
@@ -64,7 +65,12 @@ git clone https://github.com/anthonyneedles/gardenmon.git
 cd gardenmon
 ./init_rpi.sh
 ```
-3. After successful running the init script, reboot with:
+
+3. Fill in `local_options.py`.
+For security reasons, this file does not get tracked by git.
+It also holds values that are specific to a certain gardenmon device.
+
+4. After successful running the init script, reboot with:
 ```
 sudo reboot
 ```
