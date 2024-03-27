@@ -24,6 +24,7 @@ sudo raspi-config nonint do_serial 0
 
 # Install python3 and needed libraries.
 sudo apt install python3 -y
+sudo apt install python3-pip -y
 sudo pip3 install smbus2
 sudo pip3 install mysql-connector-python
 
