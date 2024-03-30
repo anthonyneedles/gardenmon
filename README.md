@@ -6,7 +6,6 @@
     - [Raspberry Pi](#raspberry-pi)
     - [Sensors](#sensors)
     - [GardenMon Interface Board](#gardenmon-interface-board)
-    - [Connections](#connections)
   - [Software](#software)
     - [Raspberry Pi Setup](#raspberry-pi-setup)
       - [Further Setup](#further-setup)
@@ -42,10 +41,6 @@ _\* SMS analog input is converted via MCP3221 ADC on the GardenMon Interface Boa
 ### GardenMon Interface Board
 
 The GardenMon uses the [GardenMon Interface Board](https://github.com/anthonyneedles/gardenmon-interfaceboard) for connecting the sensors to the RPi.
-
-### Connections
-
-![rpi_zero2w_pinout.png](./docs/rpi_zero2w_pinout.png)
 
 ## Software
 
@@ -103,8 +98,8 @@ Should be found on Windows at `\\gardenmon\gardenmon_logs`.
 ### Database
 
 In addition to being written to CSVs, data is published to a database.
-
-See [docs/mariadb.md](docs/mariadb.md) for info on setting up the database with MariaDB.
+The GardenMon Server then serves this data.
+See [gardenmon-server](https://github.com/anthonyneedles/gardenmon-server) for more info.
 
 ### Useful Commands
 
