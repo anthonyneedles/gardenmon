@@ -10,7 +10,7 @@ fi
 
 # Update apt as normal.
 sudo apt update
-sudo apt -y update
+sudo apt -y upgrade
 
 # Gotta have vim.
 sudo apt install vim -y
