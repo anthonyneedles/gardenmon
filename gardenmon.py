@@ -152,7 +152,20 @@ class SMS(Sensor):
 
         return val
 
+    def raw_value_to_adjusted_value(self, value: int, temp_f: float) -> int:
+        # SMS doesn't just change on soil moisture, but temperature too.
+        # This method adjusts the raw value based on soil temperature.
+        if value is None or temp_f is None:
+            logging.error(f"Can't convert SMS raw value '{value}' and temp '{temp_f}' to adjusted value.")
+            return None
+
+        return value
+    
     def value_to_level(self, value: int) -> int:
+        if value is None:
+            logging.error(f"Can't convert SMS value '{value}' to level.")
+            return None
+        
         if value < self.low_value:
             return 1
         elif value > self.high_value:
@@ -206,23 +219,25 @@ def gardenmon_main():
         time.sleep(sleeptime)
         current_time = datetime.datetime.now()
 
-        cpu_temp  = cpu_temp_sensor.get_value_or_none()
-        aths_vals = aths_sensor.get_value_or_none()
-        aths_temp = aths_vals["temperature"]
-        aths_hmd  = aths_vals["humidity"]
-        sts_temp  = sts_sensor.get_value_or_none()
-        sms_val   = sms_sensor.get_value_or_none()
-        sms_level = sms_sensor.value_to_level(sms_val)
-        als_lux   = als_sensor.get_value_or_none()
+        cpu_temp   = cpu_temp_sensor.get_value_or_none()
+        aths_vals  = aths_sensor.get_value_or_none()
+        aths_temp  = aths_vals["temperature"]
+        aths_hmd   = aths_vals["humidity"]
+        sts_temp   = sts_sensor.get_value_or_none()
+        sms_rawval = sms_sensor.get_value_or_none()
+        sms_adjval = sms_sensor.raw_value_to_adjusted_value(sms_rawval)
+        sms_level  = sms_sensor.value_to_level(sms_adjval)
+        als_lux    = als_sensor.get_value_or_none()
 
         row = [current_time.strftime('%Y-%m-%d %H:%M:%S')]
-        row.extend(["CPU Temperature",     cpu_temp,  "F"])
-        row.extend(["Ambient Temperature", aths_temp, "F"])
-        row.extend(["Ambient Humidity",    aths_hmd,  "%"])
-        row.extend(["Soil Temperature",    sts_temp,  "F"])
-        row.extend(["Soil Moisture Value", sms_val,   "decimal_value"])
-        row.extend(["Soil Moisture Level", sms_level, "decimal_value"])
-        row.extend(["Ambient Light",       als_lux,   "lx"])
+        row.extend(["CPU Temperature",         cpu_temp,   "F"])
+        row.extend(["Ambient Temperature",     aths_temp,  "F"])
+        row.extend(["Ambient Humidity",        aths_hmd,   "%"])
+        row.extend(["Soil Temperature",        sts_temp,   "F"])
+        row.extend(["Soil Moisture Raw Value", sms_rawval, "decimal_value"])
+        row.extend(["Soil Moisture Adj Value", sms_adjval, "decimal_value"])
+        row.extend(["Soil Moisture Level",     sms_level,  "decimal_value"])
+        row.extend(["Ambient Light",           als_lux,    "lx"])
 
         with open(f"{log_folder}/main.csv", "a") as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=',')
@@ -232,10 +247,11 @@ def gardenmon_main():
             csvwriter = csv.writer(csvfile, delimiter=',')
             csvwriter.writerow(row)
 
+        # We don't report the SMS raw value to the database, only adj value.
         data = (
             cpu_temp,
             als_lux,
-            sms_val,
+            sms_adjval,
             sms_level,
             sts_temp,
             aths_temp,
