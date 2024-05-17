@@ -160,12 +160,12 @@ class SMS(Sensor):
             return None
 
         return value
-    
+
     def value_to_level(self, value: int) -> int:
         if value is None:
             logging.error(f"Can't convert SMS value '{value}' to level.")
             return None
-        
+
         if value < self.low_value:
             return 1
         elif value > self.high_value:
@@ -196,12 +196,66 @@ class ALS(Sensor):
         lux = float(val)/1.2 + self.lux_trim
         return round(lux, 1)
 
+def header_matches(csv_file: str, header: tuple[str]) -> bool:
+    # Assumes csv_file exists and has a header.
+    with open(csv_file, "r") as f:
+        reader = csv.reader(f)
+        return header == tuple(next(reader))
+
+def create_log(csv_file: str, header: tuple[str]):
+    logging.info(f"Making csv log '{csv_file}'")
+    with open(csv_file, "w") as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+
+def write_row(csv_file: str, row: tuple):
+    with open(csv_file, "a") as f:
+        writer = csv.writer(f)
+        writer.writerow(row)
+
 def gardenmon_main():
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
 
-    log_folder = '/var/log/gardenmon'
-    if not os.path.exists(log_folder):
-        os.makedirs(log_folder)
+    header_row = (
+        "Time",
+        "CPU Temperature (F)",
+        "Ambient Temperature (F)",
+        "Ambient Humidity (%)",
+        "Soil Temperature (F)",
+        "Soil Moisture Raw Value",
+        "Soil Moisture Adj Value",
+        "Soil Moisture Level",
+        "Ambient Light (lx)"
+    )
+
+    csv_log_dir = "/var/log/gardenmon"
+    start_time = datetime.datetime.now()
+    hostname = gethostname()
+    daily_csv_log = f"{csv_log_dir}/{hostname}_{start_time.date()}.csv"
+    main_csv_log = f"{csv_log_dir}/{hostname}_main.csv"
+
+    if not os.path.exists(csv_log_dir):
+        logging.info(f"Making csv log dir '{csv_log_dir}'")
+        os.makedirs(csv_log_dir)
+
+    # If log does not exist, create new log.
+    # If log exists but header doesn't match, make backup and create new log.
+    # If log exists and header does match, nothing needs to be done.
+    for log in (daily_csv_log, main_csv_log):
+        log_exists = os.path.isfile(log)
+        if log_exists:
+            header_match = header_matches(log, header_row)
+            if header_match:
+                logging.info(f"'{log}' exists and header matches.")
+            else:
+                logging.info(f"'{log}' exists but header does not match.")
+                backup = f"{log}.{start_time.strftime('%Y%m%d%H%M%S')}.bak"
+                logging.info(f"Moving '{log}' to {backup}")
+                os.rename(log, backup)
+                create_log(log, header_row)
+        else:
+            logging.info(f"'{log}' does not exist.")
+            create_log(log, header_row)
 
     cpu_temp_sensor = CpuTemp()
     aths_sensor = ATHS()
@@ -219,33 +273,35 @@ def gardenmon_main():
         time.sleep(sleeptime)
         current_time = datetime.datetime.now()
 
+        timestamp  = current_time.strftime("%Y-%m-%d %H:%M:%S")
         cpu_temp   = cpu_temp_sensor.get_value_or_none()
         aths_vals  = aths_sensor.get_value_or_none()
         aths_temp  = aths_vals["temperature"]
         aths_hmd   = aths_vals["humidity"]
         sts_temp   = sts_sensor.get_value_or_none()
         sms_rawval = sms_sensor.get_value_or_none()
-        sms_adjval = sms_sensor.raw_value_to_adjusted_value(sms_rawval)
+        sms_adjval = sms_sensor.raw_value_to_adjusted_value(sms_rawval, sts_temp)
         sms_level  = sms_sensor.value_to_level(sms_adjval)
         als_lux    = als_sensor.get_value_or_none()
 
-        row = [current_time.strftime('%Y-%m-%d %H:%M:%S')]
-        row.extend(["CPU Temperature",         cpu_temp,   "F"])
-        row.extend(["Ambient Temperature",     aths_temp,  "F"])
-        row.extend(["Ambient Humidity",        aths_hmd,   "%"])
-        row.extend(["Soil Temperature",        sts_temp,   "F"])
-        row.extend(["Soil Moisture Raw Value", sms_rawval, "decimal_value"])
-        row.extend(["Soil Moisture Adj Value", sms_adjval, "decimal_value"])
-        row.extend(["Soil Moisture Level",     sms_level,  "decimal_value"])
-        row.extend(["Ambient Light",           als_lux,    "lx"])
+        row = (
+            timestamp,
+            cpu_temp,
+            aths_temp,
+            aths_hmd,
+            sts_temp,
+            sms_rawval,
+            sms_adjval,
+            sms_level,
+            als_lux
+        )
 
-        with open(f"{log_folder}/main.csv", "a") as csvfile:
-            csvwriter = csv.writer(csvfile, delimiter=',')
-            csvwriter.writerow(row)
-
-        with open(f"{log_folder}/{current_time.date()}.csv", "a") as csvfile:
-            csvwriter = csv.writer(csvfile, delimiter=',')
-            csvwriter.writerow(row)
+        # Write rows to logs. If the day has changed, create new daily log.
+        daily_csv_log = f"{csv_log_dir}/{hostname}_{current_time.date()}.csv"
+        if not os.path.isfile(daily_csv_log):
+            create_log(daily_csv_log, header_row)
+        write_row(daily_csv_log, row)
+        write_row(main_csv_log, row)
 
         # We don't report the SMS raw value to the database, only adj value.
         data = (
@@ -257,7 +313,7 @@ def gardenmon_main():
             aths_temp,
             aths_hmd,
             current_time,
-            gethostname()
+            hostname
         )
 
         try:
