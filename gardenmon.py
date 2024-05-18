@@ -159,7 +159,8 @@ class SMS(Sensor):
             logging.error(f"Can't convert SMS raw value '{value}' and temp '{temp_f}' to adjusted value.")
             return None
 
-        return value
+        # Formula found from empirical testing.
+        return int(value - 13.4*temp_f + 1150)
 
     def value_to_level(self, value: int) -> int:
         if value is None:
