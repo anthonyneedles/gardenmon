@@ -141,6 +141,9 @@ class SMS(Sensor):
         self.high_value = local_options.sms_high_value
         self.levels = 10
 
+        self.data_history = []
+        self.data_history_maxlen = 10
+
     def read(self) -> int:
         # Read fake "register" 0x00, get back 2 bytes:
         #   0 : MSB of ADC reading
@@ -150,7 +153,15 @@ class SMS(Sensor):
 
         val += self.value_trim
 
-        return val
+        # Perform a moving average of the last n data values.
+        # This ramps up to the max number of n data values to average.
+        if len(self.data_history) < self.data_history_maxlen:
+            self.data_history.append(val)
+        else:
+            self.data_history.pop(0)
+            self.data_history.append(val)
+
+        return int(sum(self.data_history)/len(self.data_history))
 
     def raw_value_to_adjusted_value(self, value: int, temp_f: float) -> int:
         # SMS doesn't just change on soil moisture, but temperature too.
