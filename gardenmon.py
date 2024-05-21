@@ -142,7 +142,7 @@ class SMS(Sensor):
         self.levels = 10
 
         self.data_history = []
-        self.data_history_maxlen = 10
+        self.data_history_maxlen = 60
 
     def read(self) -> int:
         # Read fake "register" 0x00, get back 2 bytes:
