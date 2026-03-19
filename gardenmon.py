@@ -283,9 +283,10 @@ def gardenmon_main():
         # Ensure we sample every minute, on the minute.
         sleeptime = 60 - datetime.datetime.now().second
         time.sleep(sleeptime)
-        current_time = datetime.datetime.now()
+        current_time_local = datetime.datetime.now()
+        current_time_utc = datetime.datetime.now(datetime.timezone.utc)
 
-        timestamp  = current_time.strftime("%Y-%m-%d %H:%M:%S")
+        timestamp  = current_time_local.strftime("%Y-%m-%d %H:%M:%S")
         cpu_temp   = cpu_temp_sensor.get_value_or_none()
         aths_vals  = aths_sensor.get_value_or_none()
         aths_temp  = aths_vals["temperature"]
@@ -309,7 +310,7 @@ def gardenmon_main():
         )
 
         # Write rows to logs. If the day has changed, create new daily log.
-        daily_csv_log = f"{csv_log_dir}/{hostname}_{current_time.date()}.csv"
+        daily_csv_log = f"{csv_log_dir}/{hostname}_{current_time_local.date()}.csv"
         if not os.path.isfile(daily_csv_log):
             create_log(daily_csv_log, header_row)
         write_row(daily_csv_log, row)
@@ -324,7 +325,7 @@ def gardenmon_main():
             sts_temp,
             aths_temp,
             aths_hmd,
-            current_time,
+            current_time_utc,
             hostname
         )
 
