@@ -10,7 +10,6 @@ import mysql.connector
 import os
 from smbus2 import SMBus
 from socket import gethostname
-import sys
 import time
 
 def c_to_f(c: float) -> float:
@@ -124,8 +123,10 @@ class STS(Sensor):
 
 class SMS(Sensor):
     """
-    Soil Moisture Sensor. Underlying sensor is a soil moisture probe with
+    Soil Moisture Sensor. Underlying sensor is a capacitive moisture probe with
     the output fed into an MCP3221 ADC. Connected via I2C.
+
+    The relation between raw value and moisture level is inversely proportional.
     """
 
     def __init__(self):
@@ -136,9 +137,9 @@ class SMS(Sensor):
 
         self.value_trim = local_options.sms_value_trim
 
-        # Measured low (dry) and high (wet) points.
-        self.low_value = local_options.sms_low_value
-        self.high_value = local_options.sms_high_value
+        # Measured driest (in the air) and wettest (in a glass of water) points.
+        self.driest_value = local_options.sms_driest_value
+        self.wettest_value = local_options.sms_wettest_value
         self.levels = 10
 
         self.data_history = []
@@ -163,29 +164,40 @@ class SMS(Sensor):
 
         return int(sum(self.data_history)/len(self.data_history))
 
-    def raw_value_to_adjusted_value(self, value: int, temp_f: float) -> int:
-        # SMS doesn't just change on soil moisture, but temperature too.
-        # This method adjusts the raw value based on soil temperature.
-        if value is None or temp_f is None:
-            logging.error(f"Can't convert SMS raw value '{value}' and temp '{temp_f}' to adjusted value.")
+    def value_to_level(self, raw_value: int) -> int:
+        """
+        Maps raw ADC values from the MCP3221 to a discrete moisture level.
+
+        The sensor output is inversely proportional:
+        - High ADC values (e.g., 3600) indicate dry soil.
+        - Low ADC values (e.g., 500) indicate wet soil.
+
+        Example:
+            If driest_value=3600 and wettest_value=500:
+            - A raw value of 3600 returns level 1.
+            - A raw value of 2050 (midpoint) returns level 5.
+            - A raw value of 500 returns level 10.
+        """
+        if raw_value is None:
+            logging.error(f"Can't convert SMS value '{raw_value}' to level.")
             return None
 
-        # Just return the raw value for now...
-        return value
-
-    def value_to_level(self, value: int) -> int:
-        if value is None:
-            logging.error(f"Can't convert SMS value '{value}' to level.")
-            return None
-
-        if value < self.low_value:
+        # Clamp at the wettest and the driest raw values to the highest
+        # and lowest levels, respectively.
+        if raw_value >= self.driest_value:
             return 1
-        elif value > self.high_value:
+        if raw_value <= self.wettest_value:
             return self.levels
-        else:
-            # Rely on int() rounding to floor() the calculated level.
-            value_per_step = (self.high_value - self.low_value)/(self.levels - 2)
-            return int((value - self.low_value)/value_per_step) + 2
+
+        # Calculate the percentage of "moisture" (0.0 to 1.0).
+        # This gives us 0.0 at driest_value and 1.0 at wettest_value.
+        total_range = self.driest_value - self.wettest_value
+        moisture_ratio = (self.driest_value - raw_value) / total_range
+
+        # Map to 1-10 scale.
+        level = round(moisture_ratio * (self.levels - 1)) + 1
+
+        return level
 
 class ALS(Sensor):
     """
@@ -235,7 +247,6 @@ def gardenmon_main():
         "Ambient Humidity (%)",
         "Soil Temperature (F)",
         "Soil Moisture Raw Value",
-        "Soil Moisture Adj Value",
         "Soil Moisture Level",
         "Ambient Light (lx)"
     )
@@ -293,8 +304,7 @@ def gardenmon_main():
         aths_hmd   = aths_vals["humidity"]
         sts_temp   = sts_sensor.get_value_or_none()
         sms_rawval = sms_sensor.get_value_or_none()
-        sms_adjval = sms_sensor.raw_value_to_adjusted_value(sms_rawval, sts_temp)
-        sms_level  = sms_sensor.value_to_level(sms_adjval)
+        sms_level  = sms_sensor.value_to_level(sms_rawval)
         als_lux    = als_sensor.get_value_or_none()
 
         row = (
@@ -304,7 +314,6 @@ def gardenmon_main():
             aths_hmd,
             sts_temp,
             sms_rawval,
-            sms_adjval,
             sms_level,
             als_lux
         )
@@ -320,7 +329,7 @@ def gardenmon_main():
         data = (
             cpu_temp,
             als_lux,
-            sms_adjval,
+            sms_rawval,
             sms_level,
             sts_temp,
             aths_temp,

@@ -34,7 +34,7 @@ Any number of GardeMon devices can be setup to interface with this centralized d
 - SHT30 Temperature/Humidity Sensor (I2C Interface): [Amazon](https://a.co/d/8ex6dXB)
 - DS18B20 Temperature Sensor (1Wire Interface): [Amazon](https://a.co/d/eyS4yjb)
 - Ambient Light Sensor (I2C Interface): [DFRobot](https://www.dfrobot.com/product-2664.html)
-- Soil Moisture Sensor (Analog Interface\*): [Amazon](https://a.co/d/6MesPOF)
+- Capacitive Soil Moisture Sensor (Analog Interface\*): [DFRobot](https://www.dfrobot.com/product-2054.html)
 
 _\* SMS analog input is converted via MCP3221 ADC on the GardenMon Interface Board (I2C Interface)_
 
