@@ -142,8 +142,10 @@ class SMS(Sensor):
         self.wettest_value = local_options.sms_wettest_value
         self.levels = 10
 
+        # Keep a 24 hour averaging window to smooth out fluctuations due to
+        # daily temperature cycles.
         self.data_history = []
-        self.data_history_maxlen = 60
+        self.data_history_maxlen = 60*24
 
     def read(self) -> int:
         # Read fake "register" 0x00, get back 2 bytes:
@@ -162,7 +164,9 @@ class SMS(Sensor):
             self.data_history.pop(0)
             self.data_history.append(val)
 
-        return int(sum(self.data_history)/len(self.data_history))
+        window_val = int(sum(self.data_history)/len(self.data_history))
+
+        return val, window_val
 
     def value_to_level(self, raw_value: int) -> int:
         """
@@ -303,8 +307,8 @@ def gardenmon_main():
         aths_temp  = aths_vals["temperature"]
         aths_hmd   = aths_vals["humidity"]
         sts_temp   = sts_sensor.get_value_or_none()
-        sms_rawval = sms_sensor.get_value_or_none()
-        sms_level  = sms_sensor.value_to_level(sms_rawval)
+        sms_val, sms_window_val = sms_sensor.get_value_or_none()
+        sms_level  = sms_sensor.value_to_level(sms_window_val)
         als_lux    = als_sensor.get_value_or_none()
 
         row = (
@@ -313,7 +317,8 @@ def gardenmon_main():
             aths_temp,
             aths_hmd,
             sts_temp,
-            sms_rawval,
+            sms_val,
+            sms_window_val,
             sms_level,
             als_lux
         )
@@ -325,11 +330,11 @@ def gardenmon_main():
         write_row(daily_csv_log, row)
         write_row(main_csv_log, row)
 
-        # We don't report the SMS raw value to the database, only adj value.
         data = (
             cpu_temp,
             als_lux,
-            sms_rawval,
+            sms_val,
+            sms_window_val,
             sms_level,
             sts_temp,
             aths_temp,
@@ -348,9 +353,9 @@ def gardenmon_main():
 
             INSERT_STATEMENT = (
                 f"INSERT INTO {local_options.database_table} "
-                "(cpu_temp_f, ambient_light_lx, soil_moisture_val, soil_moisture_level, "
+                "(cpu_temp_f, ambient_light_lx, soil_moisture_val, soil_moisture_window_val, soil_moisture_level, "
                 "soil_temp_f, ambient_temp_f, ambient_humidity, insert_time, device) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
             )
 
             cursor = connection.cursor()
